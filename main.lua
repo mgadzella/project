@@ -1,5 +1,4 @@
 require("player")
-require("obstacle")
 require("input")
 
 function love.load()
@@ -35,6 +34,7 @@ function love.update()
 end
 
 function love.draw()
+  love.graphics.setFont(font)
   love.graphics.setBackgroundColor(1, 1, 1)
   if online == true then
     p:draw()

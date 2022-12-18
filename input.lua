@@ -44,7 +44,6 @@ function i:port()
 end
 
 function i:draw()
-  love.graphics.setFont(font)
   love.graphics.setColor(0, 0, 0)
   love.graphics.print(state..": "..text, 100, 100)
 end
