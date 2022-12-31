@@ -1,4 +1,4 @@
-# CS50x Project
+# CS50x Final Project
 [Video Demo](https://youtu.be/lXLusEWjBbQ)
 #### The Process:
 When looking through the list of examples for this project, "a game using Lua with LÖVE" had caught my eye. I knew that Roblox used Lua as a scripting language for creators, but I haven't heard of LÖVE. After some browsing, it appeared to me that it was both beginner friendly and highly functional, which sold the deal for me.
