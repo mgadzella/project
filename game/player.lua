@@ -3,10 +3,13 @@ local userlist = {}
 local x, y =  0, 0
 local playerstate = "capture"
 local size = 100
+local maxdef = 5
 local cancontinue = true
 local grid = {}
 local gridsize = 5
 local griddone = 0
+local winner = nil
+local showwinner = 0
 for index = 1, gridsize, 1 do
   grid[index] = {}
   for _ = 1, gridsize, 1 do
@@ -42,7 +45,7 @@ end
 local function findwinner()
   local list = {}
   for _, user in ipairs(userlist) do
-    table.insert(list, {user[1], 0})
+    table.insert(list, {user[1], 0, user[7]})
   end
   for _, row in ipairs(grid) do
     for _, column in ipairs(row) do
@@ -55,7 +58,7 @@ local function findwinner()
       end
     end
   end
-  local highest = {0, -1}
+  local highest = {0, -1, ""}
   local tie = false
   for _, value in ipairs(list) do
     if value[2] > highest[2] then
@@ -65,21 +68,21 @@ local function findwinner()
     end
   end
   if tie == false then
-    return tostring(highest[1])
+    return tostring(highest[3])
   elseif tie == true then
     local ties = {}
     for _, value in ipairs(list) do
       if value[2] == highest[2] then
-        table.insert(ties, value[1])
+        table.insert(ties, value[3])
       end
     end
     return table.concat(ties, ", ")
   end
 end
 
-function p:connect(addr, port)
+function p:connect(addr, port, name)
   udp:setpeername(addr, port)
-  udp:send("joined")
+  udp:send(name.." joined")
   local tmpdata = udp:receive()
   if not tmpdata then
     print("something went wrong between server and client")
@@ -89,6 +92,8 @@ function p:connect(addr, port)
   local data, _ = split(tmpdata)
   myid = tonumber(data[1])
   mycolor = {tonumber(data[2]), tonumber(data[3]), tonumber(data[4])}
+  x, y = tonumber(data[5]), tonumber(data[6])
+  grid[x+1][y+1] = myid
   udp:settimeout(0)
 end
 
@@ -103,7 +108,7 @@ function p:update()
     local userdata, action = split(data)
     if userdata then
       if action == "joined" then
-        table.insert(userlist, {userdata[1], "default", "default", userdata[2], userdata[3], userdata[4]})
+        table.insert(userlist, {userdata[1], "default", "default", userdata[2], userdata[3], userdata[4], userdata[5]})
         udp:send(string.format("%d %d %d pos", myid, x, y))
         for rowindex, row in ipairs(grid) do
           for columnindex, column in ipairs(row) do
@@ -284,18 +289,6 @@ end
 
 function p:draw()
   if userlist then
-    for _, user in ipairs(userlist) do
-      if not (user[2] == "default" and user[3] == "default") then
-        if tonumber(user[1]) == myid then
-          love.graphics.setColor(mycolor[1]/255, mycolor[2]/255, mycolor[3]/255)
-        else
-          love.graphics.setColor(user[4]/255, user[5]/255, user[6]/255)
-        end
-        love.graphics.rectangle("fill", user[2]*size, user[3]*size, size, size)
-        love.graphics.setColor(0, 0, 0)
-        love.graphics.printf(user[1], user[2]*size, user[3]*size+30, size, "center")
-      end
-    end
     for rowindex, row in ipairs(grid) do
       for column in ipairs(row) do
         square = tonumber(row[column])
@@ -320,9 +313,42 @@ function p:draw()
         end
       end
     end
+    for _, user in ipairs(userlist) do
+      if not (user[2] == "default" and user[3] == "default") then
+        if tonumber(user[1]) == myid then
+          love.graphics.setColor(mycolor[1]/255, mycolor[2]/255, mycolor[3]/255)
+          love.graphics.rectangle("fill", user[2]*size, user[3]*size, size, size)
+          if (mycolor[1] + mycolor[2] + mycolor[3]) > 382 then
+            love.graphics.setColor(0, 0, 0)
+          else
+            love.graphics.setColor(1, 1, 1)
+          end
+          love.graphics.printf("YOU", user[2]*size, user[3]*size, size, "center")
+          if string.len(user[7]) > 4 then
+            love.graphics.printf(string.sub(user[7], 1, 4), user[2]*size, user[3]*size+30, size, "center")
+          else
+            love.graphics.printf(user[7], user[2]*size, user[3]*size+30, size, "center")
+          end
+          love.graphics.printf(string.sub(playerstate, 1, 3), user[2]*size, user[3]*size+60, size, "center")
+        else
+          love.graphics.setColor(user[4]/255, user[5]/255, user[6]/255)
+          love.graphics.rectangle("fill", user[2]*size, user[3]*size, size, size)
+          if (user[4] + user[5] + user[6]) > 382 then
+            love.graphics.setColor(0, 0, 0)
+          else
+            love.graphics.setColor(1, 1, 1)
+          end
+          if string.len(user[7]) > 4 then
+            love.graphics.printf(string.sub(user[7], 1, 4), user[2]*size, user[3]*size+30, size, "center")
+          else
+            love.graphics.printf(user[7], user[2]*size, user[3]*size+30, size, "center")
+          end
+        end
+      end
+    end
     if griddone == (gridsize ^ 2) then
-      print("winner(s): "..findwinner())
-      love.event.quit()
+      winner = findwinner()
+      showwinner = (socket.gettime()*1000) + 5000
       for rowindex, row in ipairs(grid) do
         for columnindex, column in ipairs(row) do
           if column ~= 0 then
@@ -330,8 +356,11 @@ function p:draw()
           end
         end
       end
-      udp:send("done")
     end
     griddone = 0
+  end
+  if (winner ~= nil) and (showwinner > socket.gettime()*1000) then
+    love.graphics.setColor(0, 0, 0, 0.25)
+    love.graphics.printf(winner.." WINS!", 0, 200, 500, "center")
   end
 end

@@ -27,9 +27,11 @@ end
 
 function i:addr()
   function love.textinput(added)
-    text = text .. added
+    if (tonumber(added) or added == ".") and string.len(text) < 15 then
+      text = text .. added
+    end
   end
-  state = "addr"
+  state = "address"
   return otherkey()
 end
 
@@ -43,7 +45,17 @@ function i:port()
   return otherkey()
 end
 
+function i:name()
+  function love.textinput(added)
+    if string.len(text) < 12 and added ~= " " then
+      text = text .. added
+    end
+  end
+  state = "username"
+  return otherkey()
+end
+
 function i:draw()
   love.graphics.setColor(0, 0, 0)
-  love.graphics.print(state..": "..text, 100, 100)
+  love.graphics.printf(state..": "..text, 0, 200, 500, "center")
 end

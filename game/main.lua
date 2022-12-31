@@ -4,7 +4,7 @@ require("input")
 function love.load()
   love.window.setMode(500, 500, {resizable=false, vsync=0})
   love.mouse.setVisible(true)
-  local socket = require("socket")
+  socket = require("socket")
   udp = socket.udp()
   text = ""
   font = love.graphics.newFont(30)
@@ -22,13 +22,15 @@ function love.update()
   if online == true then
     p:update()
   elseif online == false then
-    if ((addr ~= "") and addr) and ((port ~= "") and port) then
+    if ((addr ~= "") and addr) and ((port ~= "") and port) and ((name ~= "") and name) then
       online = true
-      p:connect(addr, tonumber(port))
-    elseif not addr then
+      p:connect(addr, tonumber(port), name)
+    elseif not addr or addr == "" then
       addr = i:addr()
-    elseif addr then
+    elseif addr and (not port or port == "") then
       port = i:port()
+    elseif port and (not name or name == "") then
+      name = i:name()
     end
   end
 end
